@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "_internal": {
+      "isDebug": false,
+      "projectRoot": "H:\\Web Development\\chat\\turtle-chat-react-native",
+      "dynamicConfigPath": null,
+      "staticConfigPath": null,
+      "packageJsonPath": "H:\\Web Development\\chat\\turtle-chat-react-native\\package.json"
+    },
+    "name": "turtle-chat-react-native",
+    "slug": "turtle-chat-react-native",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "android": {
+      "package": "com.turtleChat"
+    }
+  }
+}
