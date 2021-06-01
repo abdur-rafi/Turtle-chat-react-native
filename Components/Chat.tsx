@@ -3,7 +3,7 @@ import {View,Text,ScrollView,Image,StyleSheet,SafeAreaView} from 'react-native'
 import constants from '../constants'
 import * as SecureStore from 'expo-secure-store';
 import constatnts from '../constants';
-import {group_item,user,stackNavigationParamList, message,drawerNavigationParamList} from '../interfaces/interfaces';
+import {group_item,user,stackNavigationParamList, message,drawerNavigationParamList, group_member} from '../interfaces/interfaces';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack'
 import Contact from './contact'
@@ -78,7 +78,22 @@ class Chat extends React.Component<Props,State>{
         this.addRequestContact = this.addRequestContact.bind(this);
         this.modifyRequestGroup = this.modifyRequestGroup.bind(this);
         this.onRequestAccept = this.onRequestAccept.bind(this);
+        this.addGroup = this.addGroup.bind(this);
+        this.addMembersToGroup = this.addMembersToGroup.bind(this);
 
+    }
+
+
+    addMembersToGroup(members:group_member[], group_id: number){
+        this.setState(old=>({
+            groups : old.groups.map(group=>{
+                if(group.group_id != group_id) return group;
+                return {
+                    ...group,
+                    group_members : members
+                }
+            })
+        }))
     }
 
     async getToken():Promise<string>{
@@ -410,6 +425,12 @@ class Chat extends React.Component<Props,State>{
         }))
     }
 
+    addGroup(group:group_item){
+        this.setState(old=>({
+            groups : [group, ...old.groups]
+        }))
+    }
+
     ContactAndMessages(){
         const Stack = createStackNavigator<stackNavigationParamList>();
         return(
@@ -452,7 +473,9 @@ class Chat extends React.Component<Props,State>{
                 <Drawer.Screen name = "SearchUsers">
                     {props=><SearchUser addRequestContact={this.addRequestContact} {...props}  />}
                 </Drawer.Screen>
-                <Drawer.Screen name="NewGroup" component={NewGroup} />
+                <Drawer.Screen name="NewGroup" >
+                    {props=><NewGroup addMembersToGroup = {this.addMembersToGroup} addGroup = {this.addGroup} groups = {this.state.groups} {...props}  />}
+                </Drawer.Screen>
                 </Drawer.Navigator>
             </NavigationContainer>
   );

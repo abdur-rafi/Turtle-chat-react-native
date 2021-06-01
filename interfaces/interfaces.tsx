@@ -11,7 +11,14 @@ export interface group_item{
     name_user_id : number,
     req : number,
     userlastseen : number | string,
-    last_time : string
+    last_time : string,
+    group_members? : group_member[]
+}
+
+export interface group_member{
+    image : string,
+    user_id : number,
+    username : string
 }
 
 export interface user{
