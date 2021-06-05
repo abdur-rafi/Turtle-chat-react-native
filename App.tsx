@@ -30,8 +30,12 @@ export default class App extends React.Component<{},{
   }
 
   changeCredentialState(state:CredentialState){
+
     this.setState({
       credentialState : state
+    },async ()=>{
+      if(state == 'showLinks')
+        await SecureStore.deleteItemAsync('jwtToken');
     })
   }
 
@@ -146,7 +150,7 @@ export default class App extends React.Component<{},{
         {this.state.credentialState === 'noTokenFound' && <NoTokenFound />}
         {this.state.credentialState === 'invalidToken' && <InvalidToken />}
         {this.state.credentialState === 'showLinks' && <Login setToken={this.setToekn} changeCredentialState={this.changeCredentialState} />}
-        {this.state.credentialState === 'loggedIn' && <Chat />}
+        {this.state.credentialState === 'loggedIn' && <Chat changeCredentialState = {this.changeCredentialState} />}
       </View>
     );
   }

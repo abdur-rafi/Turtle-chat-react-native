@@ -40,7 +40,9 @@ export type stackNavigationParamList = {
     Messages : {
         group_id : number,
         request : boolean
-    }
+    },
+    GroupInfo : group_item,
+    AddMember : group_item
 }
 
 export type drawerNavigationParamList = {
@@ -58,6 +60,11 @@ export interface searchUsersResponse{
 export type tabNavigatorProps = {
     Contact : undefined,
     Requests : undefined
+}
+
+export type messageInfoStackNavParamList = {
+    Messages :  undefined,
+    GroupInfo : undefined
 }
 
 export type CredentialState = 'searchingToken' | 'tokenFound' | 'noTokenFound' | 'invalidToken' | 'showLinks' | 'loggedIn';

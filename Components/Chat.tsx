@@ -3,16 +3,20 @@ import {View,Text,ScrollView,Image,StyleSheet,SafeAreaView} from 'react-native'
 import constants from '../constants'
 import * as SecureStore from 'expo-secure-store';
 import constatnts from '../constants';
-import {group_item,user,stackNavigationParamList, message,drawerNavigationParamList, group_member} from '../interfaces/interfaces';
+import {group_item,user,stackNavigationParamList, message,drawerNavigationParamList, group_member, CredentialState} from '../interfaces/interfaces';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack'
 import Contact from './contact'
 import Messages from './Messages';
 import NewGroup from './newGroup';
 import socketIOClient from "socket.io-client";
-import {createDrawerNavigator} from '@react-navigation/drawer'
+import {createDrawerNavigator, DrawerContentComponentProps, DrawerContentOptions, DrawerContentScrollView, DrawerItem, DrawerItemList} from '@react-navigation/drawer'
 import SearchUser from './SearchUsers'
+import GroupInfo from './GroupInfo'
+import AddMember from './AddMembers';
+import { Avatar } from 'react-native-elements';
 const SOCKET_ENDPOINT = constants.urlWithoutNip;
+
 let socket; 
 
 
@@ -27,7 +31,7 @@ interface State{
 }
 
 interface Props{
-
+    changeCredentialState : (state:CredentialState) => void
 }
 
 // interface Chat {
@@ -80,9 +84,21 @@ class Chat extends React.Component<Props,State>{
         this.onRequestAccept = this.onRequestAccept.bind(this);
         this.addGroup = this.addGroup.bind(this);
         this.addMembersToGroup = this.addMembersToGroup.bind(this);
+        this.modifyMembers = this.modifyMembers.bind(this);
 
     }
 
+    modifyMembers(groupId : number, members : group_member[]){
+        this.setState(old => ({
+            groups : old.groups.map(gr => {
+                if(gr.group_id != groupId) return gr;
+                return {
+                    ...gr,
+                    group_members : members
+                }
+            })
+        }))
+    }
 
     addMembersToGroup(members:group_member[], group_id: number){
         this.setState(old=>({
@@ -455,9 +471,62 @@ class Chat extends React.Component<Props,State>{
                             onRequestAccept = {this.onRequestAccept}/>
                         }
                     </Stack.Screen>
+
+                    <Stack.Screen name='GroupInfo' >
+                        {prs => <GroupInfo {...prs} groups={this.state.groups} />}
+                    </Stack.Screen>
+                    <Stack.Screen name = 'AddMember'>
+                        {prs => <AddMember modifyMembers = {this.modifyMembers} {...prs} groups = {this.state.groups} />}
+                    </Stack.Screen>
+
                 </Stack.Navigator>
             </NavigationContainer>
             
+        )
+    }
+
+    UserComponent : React.FC<{
+        user : user
+    }> = (props)=>{
+        if(!props.user) return <View></View>
+        return(
+            <View style={{
+                display : 'flex',
+                flexDirection : 'column',
+                alignItems : 'center',
+                marginTop : 20,
+                marginBottom : 5
+            }}>
+                <Avatar size='large' rounded source={{
+                    uri : constants.image64Prefix + props.user.image
+                }} />
+                <Text style={{
+                    marginTop : 10,
+                    fontSize : 18,
+                    color : 'black'
+                }}>
+                    {props.user.username}
+                </Text>
+            </View>
+        )
+    }
+
+    CustomDrawerComponent: React.FC<{
+        defaultItem : DrawerContentComponentProps<DrawerContentOptions>,
+        user : user,
+        UserComp : React.FC<{user: user}>,
+        changeCredentialState : (state : CredentialState) => void
+    }> = (props)=>{
+        return(
+            <DrawerContentScrollView {...props.defaultItem} style={{
+                backgroundColor : '#BBF2FB'
+            }} >
+                <props.UserComp user={props.user} />
+                    
+                <DrawerItemList {...props.defaultItem}/>
+                <DrawerItem label = 'logout' onPress = {()=> props.changeCredentialState('showLinks')} />
+                {/* <View><Text>asdf</Text></View> */}
+            </DrawerContentScrollView>
         )
     }
 
@@ -466,52 +535,26 @@ class Chat extends React.Component<Props,State>{
 
         return (
             <NavigationContainer independent={true}>
-                <Drawer.Navigator initialRouteName="NewGroup">
-                <Drawer.Screen name = "Chat" >
-                    {props=> <this.ContactAndMessages /> }
-                </Drawer.Screen>
-                <Drawer.Screen name = "SearchUsers">
-                    {props=><SearchUser addRequestContact={this.addRequestContact} {...props}  />}
-                </Drawer.Screen>
-                <Drawer.Screen name="NewGroup" >
-                    {props=><NewGroup addMembersToGroup = {this.addMembersToGroup} addGroup = {this.addGroup} groups = {this.state.groups} {...props}  />}
-                </Drawer.Screen>
+                <Drawer.Navigator openByDefault initialRouteName="Chat" drawerContent = {props => <this.CustomDrawerComponent changeCredentialState = {this.props.changeCredentialState} UserComp={this.UserComponent} user={this.state.user} defaultItem={props}/>} >
+                    <Drawer.Screen name = "Chat" >
+                        {props=> <this.ContactAndMessages /> }
+                    </Drawer.Screen>
+                    <Drawer.Screen name = "SearchUsers">
+                        {props=><SearchUser addRequestContact={this.addRequestContact} {...props}  />}
+                    </Drawer.Screen>
+                    <Drawer.Screen name="NewGroup" >
+                        {props=><NewGroup addMembersToGroup = {this.addMembersToGroup} addGroup = {this.addGroup} groups = {this.state.groups} {...props}  />}
+                    </Drawer.Screen>
                 </Drawer.Navigator>
             </NavigationContainer>
   );
     }
 
     render():ReactNode{
-        console.log(this.state.groups);
+        // console.log(this.state.groups);
         return(
             <this.DrawerNavigation />
         )
-        // const Stack = createStackNavigator<stackNavigationParamList>();
-        // return(
-        //     <NavigationContainer independent={true}  >
-        //         <Stack.Navigator initialRouteName="contactList" screenOptions={{
-        //             headerStyle : styles.headerStyle
-        //         }}  >
-        //             <Stack.Screen name="contactList" options={{title : "Turtle Chat"}} >
-        //                 {props=>
-        //                 <Contact {...props} groups={this.state.groups} user={this.state.user}
-        //                 changeSelected={this.changeSelected} />
-        //                 }
-        //             </Stack.Screen>
-        //             <Stack.Screen name="Messages" initialParams={{
-        //                 group_id : -1
-        //             }}>
-        //                 {props =>
-        //                     <Messages {...props} messages = {this.state[this.state.selected.group_id]}
-        //                     user = {this.state.user} addMessages={this.addMessages} selected={this.state.selected}
-        //                     sendMessage = {this.sendMessage} sendTypingEvent={this.sendTypingEvent}
-        //                     typing = {this.state.typing} resetSelected = {this.resetSelected} />
-        //                 }
-        //             </Stack.Screen>
-        //         </Stack.Navigator>
-        //     </NavigationContainer>
-            
-        // )
     }
 }
 let styles = StyleSheet.create({

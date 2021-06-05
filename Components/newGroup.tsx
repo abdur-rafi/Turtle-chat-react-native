@@ -1,5 +1,5 @@
 import React from 'react'
-import {View, Text, FlatList, ListRenderItem, Image} from 'react-native'
+import {View, Text, FlatList, ListRenderItem, Image, StyleProp, ViewStyle} from 'react-native'
 import {Button, Input, ListItem, Avatar, Badge} from 'react-native-elements'
 import LinearGradient from 'react-native-linear-gradient';
 import { group_item, group_member} from '../interfaces/interfaces'
@@ -7,6 +7,7 @@ import constants from '../constants';
 import { ScrollView } from 'react-native-gesture-handler';
 import constatnts from '../constants';
 import * as SecureStore from 'expo-secure-store';
+import WrapperList from './WrapperList';
 
 
 const SelectedMemberItem:React.FC<{
@@ -52,7 +53,8 @@ const SelectedMembers:React.FC<{
 
 const SelectMemberList:React.FC<{
     members : group_item[],
-    addToSelected : (memberId:number)=>void
+    addToSelected : (memberId:number)=>void,
+    flatListViewStyle? : StyleProp<ViewStyle>
 }> = (props)=>{
 
     const renderContactItem : ListRenderItem<group_item> = ({item}) =>{
@@ -98,8 +100,9 @@ const SelectMemberList:React.FC<{
     } 
     
     return(
-        <FlatList<group_item> data={props.members} renderItem={renderContactItem} 
+        <FlatList<group_item> listKey={'SelectMemberList'} data={props.members} renderItem={renderContactItem} 
         keyExtractor={(group) => group.group_id.toString()}
+        style = {props.flatListViewStyle}
         />
     )
 }
@@ -228,8 +231,8 @@ class NewGroup extends React.Component<Props,State>{
                 flexGrow : 1,
                 display : "flex"
             }}  >
-                <ScrollView style={{
-                    height : 80
+                <WrapperList wrapperStyle={{
+                    height :'85%'
                 }}>
                 <View style={{
                     height : 55,
@@ -300,7 +303,7 @@ class NewGroup extends React.Component<Props,State>{
                         // flexGrow:1,
                         // background Color : 'red', 
                         padding : 5,
-                        margin : 5
+                        margin : 5,
                     }}>
                         <SelectedMembers removeFromSelected = {this.removeFromSelcted} members={this.state.selectedMembers} />
                     </View>}
@@ -317,13 +320,15 @@ class NewGroup extends React.Component<Props,State>{
                         </Text>
                     </View>
 
+                    
                     <SelectMemberList addToSelected = {this.addToSelected}
+                    
                         members={this.props.groups.filter(group => (group.req == 0) && !this.state.selectedMembers.some(gr=>gr.group_id == group.group_id) )} />
 
                     
 
                 </View>
-                </ScrollView>
+                </WrapperList>
                 <Button title = "Create group" containerStyle={{
                         // marginBottom : 20,
                         padding : 30
@@ -335,3 +340,4 @@ class NewGroup extends React.Component<Props,State>{
 }
 
 export default NewGroup;
+export {SelectMemberList,SelectedMembers,SelectedMemberItem}

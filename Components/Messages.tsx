@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { version } from 'react';
 import { Text,View,FlatList,ListRenderItem ,StyleSheet,TextInput,Image} from 'react-native'
-import {RouteProp} from '@react-navigation/native'
-import {StackNavigationProp} from '@react-navigation/stack'
-import {group_item, stackNavigationParamList, user} from '../interfaces/interfaces'
+import {NavigationContainer, RouteProp} from '@react-navigation/native'
+import {createStackNavigator, StackNavigationProp} from '@react-navigation/stack'
+import {group_item, messageInfoStackNavParamList, stackNavigationParamList, user} from '../interfaces/interfaces'
 import {message} from '../interfaces/interfaces'
 import constatnts from '../constants';
 import * as SecureStore from 'expo-secure-store';
@@ -16,7 +16,10 @@ interface Messages{
 
 interface HeaderProps{
     image : string,
-    username : string
+    username : string,
+    navigation : StackNavigationProp<stackNavigationParamList,"Messages">,
+    group : group_item
+
 }
 
 const CustomHeader:React.FC<HeaderProps> = (props)=>{
@@ -28,6 +31,14 @@ const CustomHeader:React.FC<HeaderProps> = (props)=>{
             }} style={styles.headerImage} />
             <View style={{alignSelf : "center",padding : 5}}>
                 <Text style={styles.headerUsernameText}>{props.username}</Text>
+
+            </View>
+            <View style={{flexGrow : 1,padding : 5, display : 'flex',
+                    flexDirection : 'row', justifyContent : 'flex-end' }}>
+                <View >
+                    <Button onPress ={ (e)=>props.navigation.navigate('GroupInfo',props.group) } type = {'clear'} icon = {<Icon name='users' type = 'feather' />} />
+                    
+                </View>
 
             </View>
          </View>
@@ -132,7 +143,7 @@ interface Props{
 interface State{
     [key : number] : message[],
     value : string,
-    requestStatus : "notRequest" | "showPrompt" | "sentToServer"
+    requestStatus : "notRequest" | "showPrompt" | "sentToServer",
 }
 
 
@@ -146,6 +157,11 @@ class Messages extends React.Component<Props,State>{
         }
         this.flatListRef = null;
         this.setRequestStatus = this.setRequestStatus.bind(this);
+        this.inputOnChange = this.inputOnChange.bind(this);
+        this.rightIconOnClick = this.rightIconOnClick.bind(this);
+        // this.GroupInfo = this.GroupInfo.bind(this);
+        // this.MessageComp = this.MessageComp.bind(this);
+        // this.MessageInfoStackNav = this.MessageInfoStackNav.bind(this);
     }
 
     setRequestStatus(status : State['requestStatus']){
@@ -160,7 +176,7 @@ class Messages extends React.Component<Props,State>{
         })
         console.log("mounted");            
         this.props.navigation.setOptions({
-            headerTitle : props => <CustomHeader username={this.props.selected.group_user_name}
+            headerTitle : props => <CustomHeader group = {this.props.selected} navigation={this.props.navigation} username={this.props.selected.group_user_name}
             image={this.props.selected.image} {...props}
             />
         })
@@ -290,39 +306,127 @@ class Messages extends React.Component<Props,State>{
         )
     }
 
+    inputOnChange = (e) =>{
+        if(e !== this.state.value){
+            this.props.sendTypingEvent(this.props.selected.group_id);
+        }
+        // console.log(e)
+        this.setState({
+            value : e
+        })
+    }
+
+    rightIconOnClick = ()=>{
+        console.log("clicked");
+        if(this.state.value.trim() === '') return;
+        let message : message = {
+            message : this.state.value,
+            user_id : this.props.user.user_id,
+            sent_at : Date().toString(),
+            message_id : ++constatnts.sent,
+            group_id : this.props.selected.group_id,
+            username : this.props.user.username
+        }
+        this.setState({
+            value : ""
+        })
+        this.props.sendMessage(message);
+
+    }
+
+
+    // MessageComp:React.FC<{
+    //     messages : message[],
+    //     requestStatus : "notRequest" | "showPrompt" | "sentToServer",
+    //     group_id : number,
+    //     typing : boolean,
+    //     selected : group_item,
+    //     value : string,
+    //     navigation : StackNavigationProp<messageInfoStackNavParamList,'Messages'>
+
+    // }> = (props) =>{
+    //     return (
+    //         // <View>
+
+    //         // </View>
+    //         <LinearGradient colors={['#d7ddd5','#0a8fa3']} style={{height : "100%"}} >
+    //             <FlatList<message> renderItem={this.renderItem} data={props.messages} 
+    //             keyExtractor={message => message.message_id.toString()} style = {styles.flatist}
+    //             ref={ref=>this.flatListRef = ref}
+    //             inverted
+    //             />
+    //             {props.requestStatus !== "notRequest" ? (<RequestPrompt
+    //             request_id={props.group_id} 
+    //             onRequestAccept={this.props.onRequestAccept}
+    //             requestStatus ={props.requestStatus}
+    //             setRequestStatus = {this.setRequestStatus}
+    //             />) : 
+    //                 (<View>
+    //                     <Text>
+    //                         {props.typing &&
+    //                         <Text> {`${props.selected.group_user_name} is typing...`} </Text>
+    //                         }
+    //                     </Text>
+    //                     <Input placeholder="Enter Message" 
+    //                     rightIcon={
+    //                     <Icon onPress={this.rightIconOnClick}  name="paper-plane-o" type="font-awesome" color="white"
+    //                     iconStyle={styles.rightIconStyle} />
+    //                     }
+    //                     inputContainerStyle={{...styles.inputStyle}} 
+    //                     value={props.value}
+    //                     onChangeText={this.inputOnChange} style={{color : "white"}} 
+    //                     placeholderTextColor="white" 
+    //                     multiline={true} 
+    //                     />
+    //                 </View>)
+    //             }
+    //         </LinearGradient>
+    //     )
+    // }
+
+    // GroupInfo: React.FC<{
+        
+    // }> = (props)=>{
+    //     return(
+    //         <View>
+    //             <Text>
+    //                 Group Info
+    //             </Text>
+    //         </View>
+    //     )
+    // }
+
+    // MessageInfoStackNav:React.FC<{
+    //     messages : message[],
+    //     requestStatus : "notRequest" | "showPrompt" | "sentToServer",
+    //     group_id : number,
+    //     typing : boolean,
+    //     selected : group_item,
+    //     value : string
+    // }> = (props)=>{
+    //     const Stack = createStackNavigator<messageInfoStackNavParamList>();
+    //     const MessageComp = this.MessageComp;
+    //     return (
+    //         // <View>
+    //         //     <Text>sdf</Text>
+    //         // </View>
+    //         <NavigationContainer independent = {true}>
+    //             <Stack.Navigator initialRouteName = 'Messages'>
+    //                 <Stack.Screen name='Messages' >
+    //                    {prs => <MessageComp {...props} {...prs} />}
+    //                 </Stack.Screen>
+    //                 <Stack.Screen name = 'GroupInfo' component = {this.GroupInfo}/>
+    //             </Stack.Navigator>
+    //         </NavigationContainer>
+    //     )
+    // }
 
     render(){
 
 
-        let inputOnChange = (e) =>{
-            if(e !== this.state.value){
-                this.props.sendTypingEvent(this.props.selected.group_id);
-            }
-            // console.log(e)
-            this.setState({
-                value : e
-            })
-        }
-
-        let rightIconOnClick = ()=>{
-            console.log("clicked");
-            if(this.state.value.trim() === '') return;
-            let message : message = {
-                message : this.state.value,
-                user_id : this.props.user.user_id,
-                sent_at : Date().toString(),
-                message_id : ++constatnts.sent,
-                group_id : this.props.selected.group_id,
-                username : this.props.user.username
-            }
-            this.setState({
-                value : ""
-            })
-            this.props.sendMessage(message);
-
-        }
-
         return(
+            // <this.MessageInfoStackNav messages = {this.props.messages} requestStatus = {this.state.requestStatus}
+            // group_id = {this.props.route.params.group_id} typing = {this.props.typing} selected = {this.props.selected} value = {this.state.value} />
             <LinearGradient colors={['#d7ddd5','#0a8fa3']} style={{height : "100%"}} >
                 <FlatList<message> renderItem={this.renderItem} data={this.props.messages} 
                 keyExtractor={message => message.message_id.toString()} style = {styles.flatist}
@@ -343,12 +447,12 @@ class Messages extends React.Component<Props,State>{
                         </Text>
                         <Input placeholder="Enter Message" 
                         rightIcon={
-                        <Icon onPress={rightIconOnClick}  name="paper-plane-o" type="font-awesome" color="white"
+                        <Icon onPress={this.rightIconOnClick}  name="paper-plane-o" type="font-awesome" color="white"
                         iconStyle={styles.rightIconStyle} />
                         }
                         inputContainerStyle={{...styles.inputStyle}} 
                         value={this.state.value}
-                        onChangeText={inputOnChange} style={{color : "white"}} 
+                        onChangeText={this.inputOnChange} style={{color : "white"}} 
                         placeholderTextColor="white" 
                         multiline={true} 
                         />
